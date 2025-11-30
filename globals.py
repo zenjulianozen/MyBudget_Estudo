@@ -43,3 +43,6 @@ else:
     df_cat_receita = pd.DataFrame(cat_receita)
     df_cat_receita.to_csv("df_cat_receita.csv")
     df_cat_despesa.to_csv("df_cat_despesa.csv")
+
+    cat_receita = df_cat_receita["Categoria"].tolist()
+    cat_despesa = df_cat_despesa["Categoria"].tolist()

@@ -229,14 +229,14 @@ def toggle_modal(n1, is_open):
         ]
 )
 
-def salve_from_receita(n, descricao, valor, date, switches, categoria, dict_receitas):
+def salve_from_despesa(n, descricao, valor, date, switches, categoria, dict_receitas):
     #import pdb
     #pdb.set_trace()
 
     df_receitas = pd.DataFrame(dict_receitas)
 
     if n is not None and not(valor == "" or valor == None):
-        valor = round(float(valor), 2)
+        valor = round(float(valor.replace(",", ".")), 2)
         date = pd.to_datetime(date).date()
         recebido = 1 if 1 in switches else 0
         fixo = 1 if 2 in switches else 0
@@ -257,3 +257,36 @@ def salve_from_receita(n, descricao, valor, date, switches, categoria, dict_rece
 def toggle_modal(n1, is_open):
     if n1:
         return not is_open
+    
+
+#Store Despesas
+@app.callback(
+        Output("store-despesas", "data"),
+        Input("salvar_despesa", "n_clicks"),
+        [
+            State("txt-despesa", "value"),
+            State("valor-despesa", "value"),
+            State("date-despesas", "date"),
+            State("switches-input-despesa", "value"),
+            State("select_despesa", "value"),
+            State("store-despesas", "data")
+        ]
+)
+
+def salve_from_receita(n, descricao, valor, date, switches, categoria, dict_despesas):
+    #import pdb
+    #pdb.set_trace()
+
+    df_despesas = pd.DataFrame(dict_despesas)
+
+    if n is not None and not(valor == "" or valor == None):
+        valor = round(float(valor.replace(",", ".")), 2)
+        date = pd.to_datetime(date).date()
+        recebido = 1 if 1 in switches else 0
+        fixo = 1 if 2 in switches else 0
+
+        df_despesas.loc[df_despesas.shape[0]] = [valor, recebido, fixo, date, categoria, descricao]
+        df_despesas.to_csv("df_despesas.csv")
+
+    data_return = df_despesas.to_dict()
+    return data_return
