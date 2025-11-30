@@ -9,6 +9,8 @@ import plotly.express as px
 import numpy
 import pandas as pd
 
+from globals import *
+
 
 layout = dbc.Col([
     html.H1("Meu Orçamento", className="text-primary"),
@@ -57,10 +59,10 @@ layout = dbc.Col([
                                          style={"width": "100%"})
                 ], width=4),
                 dbc.Col([
-                    dbc.Label("Extras: "),
+                    dbc.Label("Opções extras"),
                     dbc.Checklist(
-                        options=[],
-                        value=[],
+                        options=[{"label": "Recebido", "value":1}, {"label": "Receita recorrente", "value": 2}],
+                        value=[1],
                         id="switches-input-receita",
                         switch=True)
                 ], width=4),
@@ -68,8 +70,8 @@ layout = dbc.Col([
                     html.Label("Categoria da receita"),
                     dbc.Select(
                         id="select_receita", 
-                        options=[],
-                        value=[]),
+                        options=[{'label': i, 'value': i} for i in sorted(cat_receita)],
+                        value=cat_receita[0]),
                 ], width=4)
             ], style={'margin-top': "25px"}),
 
@@ -136,10 +138,10 @@ layout = dbc.Col([
                                          style={"width": "100%"})
                 ], width=4),
                 dbc.Col([
-                    dbc.Label("Extras: "),
+                    dbc.Label("Opções extras"),
                     dbc.Checklist(
-                        options=[],
-                        value=[],
+                        options=[{"label": "Paga", "value": 1}, {"label": "Despesa recorrente", "value": 2}],
+                        value=[1],
                         id="switches-input-despesa",
                         switch=True)
                 ], width=4),
@@ -147,8 +149,8 @@ layout = dbc.Col([
                     html.Label("Categoria da despesa"),
                     dbc.Select(
                         id="select_despesa", 
-                        options=[],
-                        value=[]),
+                        options=[{'label': i, 'value': i} for i in sorted(cat_despesa)],
+                        value=cat_despesa[0]),
                 ], width=4)
             ], style={'margin-top': "25px"}),
 
@@ -213,6 +215,37 @@ def toggle_modal(n1, is_open):
     if n1:
         return not is_open
     
+#Store Receitas
+@app.callback(
+        Output("store-receitas", "data"),
+        Input("salvar_receita", "n_clicks"),
+        [
+            State("txt-receita", "value"),
+            State("valor-receita", "value"),
+            State("date-receitas", "date"),
+            State("switches-input-receita", "value"),
+            State("select_receita", "value"),
+            State("store-receitas", "data")
+        ]
+)
+
+def salve_from_receita(n, descricao, valor, date, switches, categoria, dict_receitas):
+    #import pdb
+    #pdb.set_trace()
+
+    df_receitas = pd.DataFrame(dict_receitas)
+
+    if n is not None and not(valor == "" or valor == None):
+        valor = round(float(valor), 2)
+        date = pd.to_datetime(date).date()
+        recebido = 1 if 1 in switches else 0
+        fixo = 1 if 2 in switches else 0
+
+        df_receitas.loc[df_receitas.shape[0]] = [valor, recebido, fixo, date, categoria, descricao]
+        df_receitas.to_csv("df_receitas.csv")
+
+    data_return = df_receitas.to_dict()
+    return data_return
 
 #Modal Despesa
 @app.callback(
