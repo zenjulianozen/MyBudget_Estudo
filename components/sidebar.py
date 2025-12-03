@@ -93,7 +93,7 @@ layout = dbc.Col([
                                     html.Legend("Remover categoria", style={"color": "red"}),
                                     dbc.Checklist(
                                         id="checklist-selected-style-receita",
-                                        options=[],
+                                        options=[{'label': i, 'value': i} for i in sorted(cat_receita)],
                                         value=[],
                                         label_checked_style={'color': "red"},
                                         input_checked_style={'backgroundColor': "blue", "borderColor": "organge"},
@@ -172,7 +172,7 @@ layout = dbc.Col([
                                     html.Legend("Remover categoria", style={"color": "red"}),
                                     dbc.Checklist(
                                         id="checklist-selected-style-despesa",
-                                        options=[],
+                                        options=[{'label': i, 'value': i} for i in sorted(cat_despesa)],
                                         value=[],
                                         label_checked_style={'color': "red"},
                                         input_checked_style={'backgroundColor': "blue", "borderColor": "organge"},
@@ -229,7 +229,7 @@ def toggle_modal(n1, is_open):
         ]
 )
 
-def salve_from_despesa(n, descricao, valor, date, switches, categoria, dict_receitas):
+def salve_from_receita(n, descricao, valor, date, switches, categoria, dict_receitas):
     #import pdb
     #pdb.set_trace()
 
@@ -273,7 +273,7 @@ def toggle_modal(n1, is_open):
         ]
 )
 
-def salve_from_receita(n, descricao, valor, date, switches, categoria, dict_despesas):
+def salve_from_despesa(n, descricao, valor, date, switches, categoria, dict_despesas):
     #import pdb
     #pdb.set_trace()
 
@@ -282,11 +282,84 @@ def salve_from_receita(n, descricao, valor, date, switches, categoria, dict_desp
     if n is not None and not(valor == "" or valor == None):
         valor = round(float(valor.replace(",", ".")), 2)
         date = pd.to_datetime(date).date()
-        recebido = 1 if 1 in switches else 0
+        efeutado = 1 if 1 in switches else 0
         fixo = 1 if 2 in switches else 0
 
-        df_despesas.loc[df_despesas.shape[0]] = [valor, recebido, fixo, date, categoria, descricao]
+        df_despesas.loc[df_despesas.shape[0]] = [valor, efeutado, fixo, date, categoria, descricao]
         df_despesas.to_csv("df_despesas.csv")
 
     data_return = df_despesas.to_dict()
     return data_return
+
+
+
+#Callbacks de adição/remoção de categorias - modais
+#Receitas
+@app.callback(
+    [Output("select_receita", "options"),
+     Output('checklist-selected-style-receita', 'options'),
+     Output('checklist-selected-style-receita', 'value'),
+     Output('stored-cat-receitas', 'data')],
+
+     [Input('add-category-receita', 'n_clicks'),
+      Input('remove-category-receita', 'n_clicks')],
+
+      [State('input-add-receita', 'value'),
+       State('checklist-selected-style-receita', 'value'),
+       State('stored-cat-receitas', 'data')]
+)
+
+def add_category(n, n2, txt, check_delete, data):
+    # import pdb
+    # pdb.set_trace()
+
+    cat_receita = list(data["Categoria"].values())
+
+    if n is not None and not(txt == "" or txt == None):
+        cat_receita = cat_receita + [txt] if txt not in cat_receita else cat_receita
+
+    if n2:
+        if len(check_delete) > 0:
+            cat_receita = [i for i in cat_receita if i not in check_delete]
+
+    opt_receita = [{'label': i, 'value': i} for i in cat_receita]
+    df_cat_receita = pd.DataFrame(cat_receita, columns = ['Categoria'])
+    df_cat_receita.to_csv('df_cat_receita.csv')
+    data_return = df_cat_receita.to_dict()
+
+    return [opt_receita, opt_receita, [], data_return]
+
+#Despesas
+@app.callback(
+    [Output("select_despesa", "options"),
+     Output('checklist-selected-style-despesa', 'options'),
+     Output('checklist-selected-style-despesa', 'value'),
+     Output('stored-cat-despesas', 'data')],
+
+     [Input('add-category-despesa', 'n_clicks'),
+      Input('remove-category-despesa', 'n_clicks')],
+
+      [State('input-add-despesa', 'value'),
+       State('checklist-selected-style-despesa', 'value'),
+       State('stored-cat-despesas', 'data')]
+)
+
+def add_category(n, n2, txt, check_delete, data):
+    # import pdb
+    # pdb.set_trace()
+
+    cat_despesa = list(data["Categoria"].values())
+
+    if n is not None and not(txt == "" or txt == None):
+        cat_despesa = cat_despesa + [txt] if txt not in cat_despesa else cat_despesa
+
+    if n2:
+        if len(check_delete) > 0:
+            cat_despesa = [i for i in cat_despesa if i not in check_delete]
+
+    opt_despesa = [{'label': i, 'value': i} for i in cat_despesa]
+    df_cat_despesa = pd.DataFrame(cat_despesa, columns = ['Categoria'])
+    df_cat_despesa.to_csv('df_cat_despesa.csv')
+    data_return = df_cat_despesa.to_dict()
+
+    return [opt_despesa, opt_despesa, [], data_return]
