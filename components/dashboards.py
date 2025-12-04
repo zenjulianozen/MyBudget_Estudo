@@ -18,7 +18,7 @@ card_icon = {
 
 graph_margin = dict(l=25, r=25, t=25, b=0)
 
-layout = dbc.Col([
+layout = dbc.Container([
     dbc.Row([
 
         #Saldo Total
@@ -123,11 +123,11 @@ layout = dbc.Col([
 
         dbc.Col([
             dbc.Card([
-                dcc.Graph(id="graph3"),
+                dcc.Graph(id="graph4"),
             ], style={'height': "100%", "padding": "10px"})
         ], width=3)
-    ], style={"margin": "10px"})
-])
+    ], style={"margin": "10px", "height": "100%", "width": "100%"})
+], fluid=True)
 
 #Receitas
 @app.callback(
@@ -180,7 +180,7 @@ def saldo_total(despesas, receitas):
     return f"R${valor}"
 
 
-#Filtros
+#FIG1
 @app.callback(
     Output("graph1", "figure"),
     [Input('store-despesas', 'data'),
@@ -210,5 +210,71 @@ def update_output(data_despesa, data_receita, despesa, receita):
     fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
     fig.update_xaxes(tickformat="%d/%m/%Y")
 
+    return fig
+
+#FIG2
+@app.callback(
+    Output("graph2", "figure"),
+    [Input('store-despesas', 'data'),
+     Input('store-receitas', 'data'),
+     Input('dropdown-despesa', 'value'),
+     Input('dropdown-receita', 'value'),
+     Input('date-picker-config', 'start_date'),
+     Input('date-picker-config', 'end_date')])
+
+def graph2_show(data_despesa, data_receita, despesa, receita, start_date, end_date):
+    # import pdb
+    # pdb.set_trace()
+
+    df_ds = pd.DataFrame(data_despesa)
+    df_rc = pd.DataFrame(data_receita)
+
+    df_ds['Output'] = "Despesas"
+    df_rc['Output'] = "Receitas"
+    df_final = pd.concat([df_ds, df_rc])
+    df_final["Data"] = pd.to_datetime(df_final['Data'])
+
+    start_date = pd.to_datetime(start_date)
+    end_date = pd.to_datetime(end_date)
+    df_final = df_final[(df_final["Data"] >= start_date) & (df_final["Data"] <= end_date)]
+    df_final = df_final[(df_final['Categoria'].isin(receita)) | (df_final['Categoria'].isin(despesa))]
+
+    fig = px.bar(df_final, x="Data", y="Valor", color="Output", barmode="group")
+
+    fig.update_layout(margin=graph_margin)
+    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+    fig.update_xaxes(tickformat="%d/%m/%Y")
+
+    return fig
+
+@app.callback(
+    Output('graph3', 'figure'),
+    [Input('store-receitas', 'data'),
+     Input('dropdown-receita', 'value')])
+
+def pie_receita(data_receita, receita):
+    df=pd.DataFrame(data_receita)
+    df=df[df["Categoria"].isin(receita)]
+
+    fig=px.pie(df, values=df.Valor, names=df.Categoria, hole=.2)
+    fig.update_layout(title={'text': 'Receitas'})
+    fig.update_layout(margin=graph_margin, height=350)
+    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+
+    return fig
+
+@app.callback(
+    Output('graph4', 'figure'),
+    [Input('store-despesas', 'data'),
+     Input('dropdown-despesa', 'value')])
+
+def pie_despesa(data_despesa, despesa):
+    df=pd.DataFrame(data_despesa)
+    df=df[df["Categoria"].isin(despesa)]
+
+    fig=px.pie(df, values=df.Valor, names=df.Categoria, hole=.2)
+    fig.update_layout(title={'text': 'Despesas'})
+    fig.update_layout(margin=graph_margin, height=350)
+    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
 
     return fig
