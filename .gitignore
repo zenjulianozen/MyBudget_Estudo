@@ -1,6 +1,21 @@
-/__pycache__
+# Virtual environment
+.venv/
+env/
+venv/
 
-/.venv
-.venv
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
-*.csv
+# Logs e arquivos temporários
+*.log
+*.sqlite3
+
+# Configurações locais do editor
+.vscode/
+
+#Arquivos gerais
+*.xml
+*.xlsx

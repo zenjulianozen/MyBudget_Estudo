@@ -16,6 +16,8 @@ card_icon = {
     "margin": "auto"
 }
 
+graph_margin = dict(l=25, r=25, t=25, b=0)
+
 layout = dbc.Col([
     dbc.Row([
 
@@ -126,3 +128,87 @@ layout = dbc.Col([
         ], width=3)
     ], style={"margin": "10px"})
 ])
+
+#Receitas
+@app.callback(
+    [Output("dropdown-receita", "options"),
+     Output('dropdown-receita', "value"),
+     Output("p-receita-dashboards", "children")],
+     [Input("store-receitas", "data")])
+
+def populate_dropdownvalues(data):
+    #import pdb
+    #pdb.set_trace()
+
+    df =pd.DataFrame(data)
+    valor = df["Valor"].sum()
+    val = df.Categoria.unique().tolist()
+
+    return ([{"label": x, "value": x} for x in val], val, f"R${valor}")
+
+#Despesas
+@app.callback(
+    [Output("dropdown-despesa", "options"),
+     Output('dropdown-despesa', "value"),
+     Output("p-despesa-dashboards", "children")],
+     [Input("store-despesas", "data")]
+)
+
+def populate_dropdownvalues(data):
+    #import pdb
+    #pdb.set_trace()
+
+    df =pd.DataFrame(data)
+    valor = df["Valor"].sum()
+    val = df.Categoria.unique().tolist()
+
+    return ([{"label": x, "value": x} for x in val], val, f"R${valor}")
+
+#Saldo
+@app.callback(
+    Output("p-saldo-dashboards", "children"),
+    [Input("store-despesas", "data"),
+     Input("store-receitas", "data")]
+)
+
+def saldo_total(despesas, receitas):
+    df_receitas = pd.DataFrame(receitas)
+    df_despesas = pd.DataFrame(despesas)
+
+    valor = df_receitas["Valor"].sum() - df_despesas["Valor"].sum()
+
+    return f"R${valor}"
+
+
+#Filtros
+@app.callback(
+    Output("graph1", "figure"),
+    [Input('store-despesas', 'data'),
+     Input('store-receitas', 'data'),
+     Input('dropdown-despesa', 'value'),
+     Input('dropdown-receita', 'value')])
+
+def update_output(data_despesa, data_receita, despesa, receita):
+    # import pdb
+    # pdb.set_trace()
+
+    df_despesas = pd.DataFrame(data_despesa).set_index("Data")[["Valor"]]
+    df_ds = df_despesas.groupby("Data").sum().rename(columns={"Valor": "Despesa"})
+
+    df_receitas = pd.DataFrame(data_receita).set_index("Data")[["Valor"]]
+    df_rc = df_receitas.groupby("Data").sum().rename(columns={"Valor": "Receita"})
+
+    df_acum = df_ds.join(df_rc, how="outer").fillna(0)
+    df_acum["Acum"] = df_acum["Receita"] - df_acum["Despesa"]
+    df_acum["Acum"] = df_acum["Acum"].cumsum()
+    
+
+    fig=go.Figure()
+    fig.add_trace(go.Scatter(name="Fluxo de Caixa", x=df_acum.index, y=df_acum["Acum"], mode="lines"))
+
+    fig.update_layout(margin=graph_margin)
+    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+    fig.update_xaxes(tickformat="%d/%m/%Y")
+
+
+    return fig
